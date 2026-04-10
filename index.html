@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadence — Focus Rhythm Planner</title>
+  <meta name="description" content="Plan a sane deep-work rhythm with focus blocks, recovery breaks, cognitive load balancing, and a sharable daily cadence." />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(18, 24, 46, 0.72);
+      --panel-2: rgba(28, 35, 66, 0.8);
+      --text: #eaf1ff;
+      --muted: #9fb0d6;
+      --soft: #7f90b8;
+      --accent: #7c9cff;
+      --accent-2: #6ee7c8;
+      --warn: #ffcf66;
+      --danger: #ff7f8a;
+      --good: #79f0a7;
+      --border: rgba(151, 171, 255, 0.16);
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:
+      radial-gradient(circle at top left, rgba(124,156,255,.22), transparent 28%),
+      radial-gradient(circle at top right, rgba(110,231,200,.12), transparent 22%),
+      linear-gradient(180deg, #0a0f1d 0%, #0d1326 100%);
+      color: var(--text);
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 32px 20px 80px; }
+    .hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 22px; align-items: stretch; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .hero-main { padding: 30px; }
+    .eyebrow { color: var(--accent-2); font-size: 13px; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; }
+    h1 { margin: 10px 0 12px; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.04; }
+    .lead { color: var(--muted); font-size: 1.08rem; line-height: 1.65; max-width: 62ch; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+    .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 18px; padding: 16px; }
+    .stat strong { display: block; font-size: 1.5rem; }
+    .stat span { color: var(--soft); font-size: .92rem; }
+    .hero-side { padding: 24px; display: grid; gap: 12px; }
+    .trend { padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--border); }
+    .trend strong { display:block; margin-bottom: 6px; }
+    .layout { display: grid; grid-template-columns: minmax(330px, 420px) 1fr; gap: 22px; margin-top: 22px; }
+    .panel { padding: 24px; }
+    .panel h2 { margin: 0 0 16px; font-size: 1.15rem; }
+    .stack { display: grid; gap: 16px; }
+    .field { display: grid; gap: 8px; }
+    label { font-weight: 600; font-size: .95rem; }
+    .hint { font-size: .84rem; color: var(--soft); margin-top: -3px; }
+    input[type="range"], input[type="text"], select, textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 14px 16px;
+      font: inherit;
+      outline: none;
+    }
+    textarea { resize: vertical; min-height: 84px; }
+    .chips, .toggles { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip, .toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      color: var(--muted);
+      transition: .18s ease;
+    }
+    .chip input, .toggle input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .chip.active, .toggle.active { color: var(--text); background: rgba(124,156,255,.18); border-color: rgba(124,156,255,.45); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      appearance: none; border: 0; cursor: pointer; border-radius: 14px; padding: 13px 16px; font: inherit; font-weight: 700;
+      transition: transform .12s ease, opacity .2s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    .primary { background: linear-gradient(135deg, var(--accent), #98a9ff); color: #081122; }
+    .secondary { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
+    .ghost { background: transparent; color: var(--muted); border: 1px dashed var(--border); }
+    .results { display: grid; gap: 18px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .metric { padding: 16px; border-radius: 18px; background: var(--panel-2); border: 1px solid var(--border); }
+    .metric .label { color: var(--soft); font-size: .84rem; margin-bottom: 6px; }
+    .metric strong { font-size: 1.55rem; }
+    .bars { display: grid; gap: 12px; }
+    .bar { display: grid; gap: 8px; }
+    .bar-head { display:flex; justify-content: space-between; color: var(--muted); font-size:.92rem; }
+    .track { height: 12px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.06); border: 1px solid var(--border); }
+    .fill { height: 100%; border-radius: inherit; }
+    .schedule { display: grid; gap: 12px; }
+    .slot {
+      display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: center;
+      padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--border);
+    }
+    .slot small, .muted { color: var(--soft); }
+    .pill { padding: 7px 10px; border-radius: 999px; font-size: .82rem; font-weight: 700; }
+    .pill.focus { background: rgba(124,156,255,.2); color: #cfd7ff; }
+    .pill.break { background: rgba(110,231,200,.18); color: #c9ffef; }
+    .pill.review { background: rgba(255,207,102,.18); color: #ffe6ad; }
+    .insights, .sourcebox { display: grid; gap: 10px; }
+    .insight, .source { padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.03); border: 1px solid var(--border); }
+    .source strong { display:block; margin-bottom: 6px; }
+    .footer { margin-top: 20px; color: var(--soft); font-size: .9rem; }
+    .tiny { font-size: .8rem; color: var(--soft); }
+    @media (max-width: 1040px) {
+      .hero, .layout { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 20px 14px 60px; }
+      .hero-main, .hero-side, .panel { padding: 18px; }
+      .hero-stats, .summary-grid { grid-template-columns: 1fr; }
+      .slot { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="card hero-main">
+        <div class="eyebrow">Focus without burnout</div>
+        <h1>Cadence builds a deep-work rhythm your brain can actually survive.</h1>
+        <p class="lead">
+          Most productivity tools optimize for output theater. Cadence optimizes for sustainable cognition: focus blocks, recovery timing,
+          meeting drag, task-switch cost, and mental load. Great for developers, makers, and anyone whose brain is their main hardware.
+        </p>
+        <div class="hero-stats">
+          <div class="stat"><strong id="heroFocus">3</strong><span>Focus blocks planned</span></div>
+          <div class="stat"><strong id="heroRecovery">84</strong><span>Recovery score</span></div>
+          <div class="stat"><strong id="heroStrain">Medium</strong><span>Cognitive strain</span></div>
+        </div>
+      </div>
+      <aside class="card hero-side">
+        <div class="trend"><strong>Why this exists</strong><span class="muted">AI tooling is exploding, but focus time is getting shredded. The useful move is better rhythm, not more tabs.</span></div>
+        <div class="trend"><strong>Built for Bence-shaped brains</strong><span class="muted">Explicit trade-offs, developer reality, learning loops, and a small dose of meditation instead of hustle-cult nonsense.</span></div>
+        <div class="trend"><strong>Static by design</strong><span class="muted">Fast, private, shareable, no account required. Good tools shouldn’t need a login ceremony.</span></div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <div class="card panel">
+        <h2>Design your day</h2>
+        <div class="stack">
+          <div class="field">
+            <label for="goal">Today’s main mission</label>
+            <textarea id="goal" placeholder="Ship NestJS permission matrix, architecture review, write docs, study new tech..."></textarea>
+            <div class="hint">The app will tune the schedule around this context.</div>
+          </div>
+
+          <div class="field">
+            <label for="energy">Starting energy <span id="energyVal">72</span>/100</label>
+            <input id="energy" type="range" min="20" max="100" value="72" />
+          </div>
+
+          <div class="field">
+            <label for="meetings">Meetings today <span id="meetingsVal">90</span> min</label>
+            <input id="meetings" type="range" min="0" max="360" step="15" value="90" />
+          </div>
+
+          <div class="field">
+            <label for="sleep">Sleep quality <span id="sleepVal">7.0</span>/10</label>
+            <input id="sleep" type="range" min="3" max="10" step="0.5" value="7" />
+          </div>
+
+          <div class="field">
+            <label for="window">Available work window</label>
+            <select id="window">
+              <option value="4">4 hours</option>
+              <option value="6">6 hours</option>
+              <option value="8" selected>8 hours</option>
+              <option value="10">10 hours</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Work mode</label>
+            <div class="chips" id="modes">
+              <label class="chip active"><input type="radio" name="mode" value="builder" checked />Builder</label>
+              <label class="chip"><input type="radio" name="mode" value="architect" />Architect</label>
+              <label class="chip"><input type="radio" name="mode" value="learner" />Learner</label>
+              <label class="chip"><input type="radio" name="mode" value="operator" />Operator</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Load drivers</label>
+            <div class="toggles" id="drivers">
+              <label class="toggle"><input type="checkbox" value="ai" />AI-heavy flow</label>
+              <label class="toggle"><input type="checkbox" value="context" />Context switching</label>
+              <label class="toggle"><input type="checkbox" value="debugging" />Debugging</label>
+              <label class="toggle"><input type="checkbox" value="decisions" />High-stakes decisions</label>
+              <label class="toggle"><input type="checkbox" value="learning" />Learning sprint</label>
+              <label class="toggle"><input type="checkbox" value="writing" />Writing / docs</label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="planBtn">Generate cadence</button>
+            <button class="secondary" id="demoBtn">Load demo</button>
+            <button class="ghost" id="shareBtn">Copy share link</button>
+          </div>
+          <div class="tiny" id="shareStatus">State syncs to the URL automatically.</div>
+        </div>
+      </div>
+
+      <div class="results">
+        <div class="card panel">
+          <h2>Today’s rhythm</h2>
+          <div class="summary-grid">
+            <div class="metric"><div class="label">Focus blocks</div><strong id="focusBlocks">3</strong></div>
+            <div class="metric"><div class="label">Focus minutes</div><strong id="focusMinutes">180</strong></div>
+            <div class="metric"><div class="label">Recovery score</div><strong id="recoveryScore">84</strong></div>
+            <div class="metric"><div class="label">Strain</div><strong id="strainLabel">Medium</strong></div>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h2>Load balance</h2>
+          <div class="bars">
+            <div class="bar">
+              <div class="bar-head"><span>Deep work capacity</span><span id="capacityPct">74%</span></div>
+              <div class="track"><div class="fill" id="capacityBar" style="width:74%; background:linear-gradient(90deg, #6ee7c8, #7c9cff);"></div></div>
+            </div>
+            <div class="bar">
+              <div class="bar-head"><span>Switching drag</span><span id="switchPct">28%</span></div>
+              <div class="track"><div class="fill" id="switchBar" style="width:28%; background:linear-gradient(90deg, #ffd166, #ff8c69);"></div></div>
+            </div>
+            <div class="bar">
+              <div class="bar-head"><span>Recovery debt</span><span id="debtPct">22%</span></div>
+              <div class="track"><div class="fill" id="debtBar" style="width:22%; background:linear-gradient(90deg, #ff7f8a, #ffb199);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h2>Recommended schedule</h2>
+          <div class="schedule" id="schedule"></div>
+        </div>
+
+        <div class="card panel">
+          <h2>Operational advice</h2>
+          <div class="insights" id="insights"></div>
+        </div>
+
+        <div class="card panel">
+          <h2>Why this idea made sense</h2>
+          <div class="sourcebox">
+            <div class="source"><strong>Signal 1 — developer productivity overload</strong><span class="muted">Recent developer-tool chatter keeps centering on AI assistants, CLI utility stacks, and workflow optimization. Translation: more tools, more interruptions, more need for deliberate focus design.</span></div>
+            <div class="source"><strong>Signal 2 — focus time is dropping</strong><span class="muted">Workplace reporting shows AI adoption can help, but usable productivity peaks only in a narrow usage band. The real bottleneck is fragmented attention, not raw tool availability.</span></div>
+            <div class="source"><strong>Signal 3 — preventative mental fitness</strong><span class="muted">Wellbeing trends are shifting toward small proactive resets instead of waiting for burnout. That maps perfectly to a static daily rhythm planner.</span></div>
+          </div>
+          <div class="footer">Built as a zero-login static tool because a focus app that starts with auth friction is already losing the plot.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const els = {
+      goal: document.getElementById('goal'),
+      energy: document.getElementById('energy'),
+      meetings: document.getElementById('meetings'),
+      sleep: document.getElementById('sleep'),
+      window: document.getElementById('window'),
+      modes: document.getElementById('modes'),
+      drivers: document.getElementById('drivers'),
+      planBtn: document.getElementById('planBtn'),
+      demoBtn: document.getElementById('demoBtn'),
+      shareBtn: document.getElementById('shareBtn'),
+      shareStatus: document.getElementById('shareStatus'),
+      energyVal: document.getElementById('energyVal'),
+      meetingsVal: document.getElementById('meetingsVal'),
+      sleepVal: document.getElementById('sleepVal'),
+      heroFocus: document.getElementById('heroFocus'),
+      heroRecovery: document.getElementById('heroRecovery'),
+      heroStrain: document.getElementById('heroStrain'),
+      focusBlocks: document.getElementById('focusBlocks'),
+      focusMinutes: document.getElementById('focusMinutes'),
+      recoveryScore: document.getElementById('recoveryScore'),
+      strainLabel: document.getElementById('strainLabel'),
+      capacityPct: document.getElementById('capacityPct'),
+      switchPct: document.getElementById('switchPct'),
+      debtPct: document.getElementById('debtPct'),
+      capacityBar: document.getElementById('capacityBar'),
+      switchBar: document.getElementById('switchBar'),
+      debtBar: document.getElementById('debtBar'),
+      schedule: document.getElementById('schedule'),
+      insights: document.getElementById('insights')
+    };
+
+    const driverWeights = { ai: 6, context: 14, debugging: 10, decisions: 12, learning: 8, writing: 5 };
+    const modeTuning = {
+      builder: { focus: 1.0, breakBonus: 0, note: 'Protect long uninterrupted blocks. Merge shallow tasks into one admin lane.' },
+      architect: { focus: 0.9, breakBonus: 6, note: 'Front-load thinking while your prefrontal cortex still loves you.' },
+      learner: { focus: 0.82, breakBonus: 10, note: 'Use shorter loops plus active recall instead of pretending 3-hour study marathons work.' },
+      operator: { focus: 0.76, breakBonus: 4, note: 'Assume interruption reality. Build buffers on purpose.' }
+    };
+
+    function formatTime(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    function getState() {
+      const mode = document.querySelector('input[name="mode"]:checked')?.value || 'builder';
+      const drivers = [...document.querySelectorAll('#drivers input:checked')].map(i => i.value);
+      return {
+        goal: els.goal.value.trim(),
+        energy: Number(els.energy.value),
+        meetings: Number(els.meetings.value),
+        sleep: Number(els.sleep.value),
+        window: Number(els.window.value),
+        mode,
+        drivers
+      };
+    }
+
+    function setChipStates() {
+      document.querySelectorAll('.chip, .toggle').forEach(el => {
+        const input = el.querySelector('input');
+        el.classList.toggle('active', input.checked);
+      });
+    }
+
+    function computePlan(state) {
+      const mode = modeTuning[state.mode];
+      const meetingPenalty = state.meetings * 0.12;
+      const driverPenalty = state.drivers.reduce((sum, d) => sum + (driverWeights[d] || 0), 0);
+      const sleepBoost = (state.sleep - 6) * 7;
+      const baseCapacity = state.energy + sleepBoost - meetingPenalty - driverPenalty + mode.breakBonus;
+      const deepCapacity = Math.max(18, Math.min(96, Math.round(baseCapacity * mode.focus)));
+      const switching = Math.max(6, Math.min(88, Math.round((state.meetings / 8) + (state.drivers.includes('context') ? 16 : 0) + (state.mode === 'operator' ? 12 : 0) + (state.mode === 'architect' ? 6 : 0))));
+      const debt = Math.max(4, Math.min(92, Math.round(100 - (state.energy * 0.65 + state.sleep * 5 - state.drivers.length * 4 - state.meetings * 0.07))));
+      const availableMinutes = state.window * 60 - state.meetings;
+      const blockLengthRaw = deepCapacity >= 75 ? 70 : deepCapacity >= 55 ? 55 : deepCapacity >= 35 ? 40 : 25;
+      const breakLength = debt >= 55 ? 20 : debt >= 35 ? 15 : 10;
+      const focusBlocks = Math.max(1, Math.min(5, Math.floor(availableMinutes / (blockLengthRaw + breakLength + 8))));
+      const focusLength = Math.max(20, Math.min(85, Math.round(blockLengthRaw)));
+      const focusMinutes = focusBlocks * focusLength;
+      const recoveryScore = Math.max(18, Math.min(96, Math.round(100 - ((debt * 0.55) + (switching * 0.2) - (state.drivers.includes('ai') ? 3 : 0)))));
+      const strain = deepCapacity >= 72 && debt < 28 ? 'Low' : deepCapacity >= 48 && debt < 52 ? 'Medium' : debt < 72 ? 'High' : 'Brutal';
+      const anchor = state.mode === 'learner' ? 9 * 60 : 8 * 60 + 30;
+      const schedule = [];
+      let cursor = anchor;
+      for (let i = 0; i < focusBlocks; i++) {
+        schedule.push({ start: cursor, end: cursor + focusLength, title: state.goal || defaultMission(state), type: 'focus', note: focusNote(state, i) });
+        cursor += focusLength;
+        if (i < focusBlocks - 1) {
+          schedule.push({ start: cursor, end: cursor + breakLength, title: breakTitle(state, debt, i), type: 'break', note: breakNote(state, debt) });
+          cursor += breakLength;
+        }
+      }
+      const reviewLength = Math.max(12, Math.min(25, Math.round((switching / 4) + 8)));
+      schedule.push({ start: cursor, end: cursor + reviewLength, title: 'Review + next-step capture', type: 'review', note: 'Close loops before context evaporates. Future-you is not a magician.' });
+
+      const insights = buildInsights(state, { deepCapacity, switching, debt, recoveryScore, focusBlocks, focusLength, breakLength, strain, availableMinutes, mode });
+      return { deepCapacity, switching, debt, recoveryScore, focusBlocks, focusMinutes, focusLength, breakLength, strain, schedule, insights };
+    }
+
+    function defaultMission(state) {
+      if (state.mode === 'architect') return 'System design / decision framing';
+      if (state.mode === 'learner') return 'Structured learning sprint';
+      if (state.mode === 'operator') return 'Ops / triage / coordination lane';
+      return 'Build the hard part first';
+    }
+
+    function focusNote(state, index) {
+      const notes = {
+        builder: ['No Slack. No email. Ship the sharp edge first.', 'Use AI as amplifier, not an excuse to fragment attention.', 'Leave TODO breadcrumbs, not mysteries.'],
+        architect: ['Write the trade-offs down. Vibes are not architecture.', 'Map boundaries before implementation pulls you into detail.', 'Decide what not to build yet. That matters too.'],
+        learner: ['Read, summarize, test yourself. Passive intake is fake progress.', 'Switch from consuming to applying inside the block.', 'End each block with one reusable note or example.'],
+        operator: ['Batch communication. Constant responsiveness is a tax.', 'Handle urgent work, then protect one meaningful chunk.', 'Use buffers so surprises do not own the day.']
+      };
+      return notes[state.mode][index % notes[state.mode].length];
+    }
+
+    function breakTitle(state, debt, index) {
+      if (state.mode === 'learner') return index % 2 === 0 ? 'Walk + recall reset' : 'Breathing + water reset';
+      if (debt > 50) return 'Actual break — stand up and move';
+      return index % 2 === 0 ? 'Microbreak + breathing reset' : 'Stretch + no-screen reset';
+    }
+
+    function breakNote(state, debt) {
+      if (debt > 55) return 'You do not need more willpower. You need recovery. Move, breathe, drink water.';
+      if (state.drivers.includes('ai')) return 'Step away from the AI tab spiral for a minute. Your brain needs defrag time too.';
+      return 'Keep it boring and physical. A break is not “check five other apps”.';
+    }
+
+    function buildInsights(state, m) {
+      const items = [];
+      items.push(`Your usable deep-work capacity is ${m.deepCapacity}%. That’s enough for ${m.focusBlocks} serious block${m.focusBlocks === 1 ? '' : 's'}, not an all-day heroic fantasy.`);
+      if (m.switching >= 45) items.push(`Switching drag is high. Meetings are chewing your cognition. Put admin and chat into one containment lane or the whole day dissolves.`);
+      else items.push(`Switching drag is manageable. Protect the first focus block like it owes you money.`);
+      if (m.debt >= 50) items.push(`Recovery debt is ugly. Use ${m.breakLength}-minute breaks and don’t negotiate with that. Burnout disguised as discipline is still burnout.`);
+      else items.push(`Recovery debt is under control. Short intentional resets will keep quality from sliding late in the day.`);
+      if (state.drivers.includes('learning')) items.push('Learning mode works best with shorter loops plus active recall. Don’t just consume content and call it progress.');
+      if (state.drivers.includes('decisions')) items.push('Make the high-stakes call early. Decision quality after fatigue is where expensive nonsense happens.');
+      if (state.drivers.includes('debugging')) items.push('Debugging loves tunnel vision. Add one explicit “restate the problem” checkpoint before block two.');
+      items.push(m.mode.note);
+      return items;
+    }
+
+    function render(plan) {
+      els.heroFocus.textContent = plan.focusBlocks;
+      els.heroRecovery.textContent = plan.recoveryScore;
+      els.heroStrain.textContent = plan.strain;
+      els.focusBlocks.textContent = plan.focusBlocks;
+      els.focusMinutes.textContent = plan.focusMinutes;
+      els.recoveryScore.textContent = plan.recoveryScore;
+      els.strainLabel.textContent = plan.strain;
+      els.capacityPct.textContent = `${plan.deepCapacity}%`;
+      els.switchPct.textContent = `${plan.switching}%`;
+      els.debtPct.textContent = `${plan.debt}%`;
+      els.capacityBar.style.width = `${plan.deepCapacity}%`;
+      els.switchBar.style.width = `${plan.switching}%`;
+      els.debtBar.style.width = `${plan.debt}%`;
+
+      els.schedule.innerHTML = plan.schedule.map(slot => `
+        <div class="slot">
+          <div><strong>${formatTime(slot.start)}</strong><br><small>${formatTime(slot.end)}</small></div>
+          <div><strong>${escapeHtml(slot.title)}</strong><br><small>${escapeHtml(slot.note)}</small></div>
+          <div class="pill ${slot.type}">${slot.type === 'focus' ? 'Focus' : slot.type === 'break' ? 'Reset' : 'Review'}</div>
+        </div>
+      `).join('');
+
+      els.insights.innerHTML = plan.insights.map(text => `<div class="insight">${escapeHtml(text)}</div>`).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function updateLabels() {
+      els.energyVal.textContent = els.energy.value;
+      els.meetingsVal.textContent = els.meetings.value;
+      els.sleepVal.textContent = Number(els.sleep.value).toFixed(1);
+      setChipStates();
+    }
+
+    function syncUrl(replace = true) {
+      const state = getState();
+      const params = new URLSearchParams();
+      if (state.goal) params.set('goal', state.goal);
+      params.set('energy', state.energy);
+      params.set('meetings', state.meetings);
+      params.set('sleep', state.sleep);
+      params.set('window', state.window);
+      params.set('mode', state.mode);
+      if (state.drivers.length) params.set('drivers', state.drivers.join(','));
+      const url = `${location.pathname}?${params.toString()}`;
+      history[replace ? 'replaceState' : 'pushState']({}, '', url);
+    }
+
+    function loadFromUrl() {
+      const params = new URLSearchParams(location.search);
+      if (params.has('goal')) els.goal.value = params.get('goal');
+      if (params.has('energy')) els.energy.value = params.get('energy');
+      if (params.has('meetings')) els.meetings.value = params.get('meetings');
+      if (params.has('sleep')) els.sleep.value = params.get('sleep');
+      if (params.has('window')) els.window.value = params.get('window');
+      if (params.has('mode')) {
+        const radio = document.querySelector(`input[name="mode"][value="${params.get('mode')}"]`);
+        if (radio) radio.checked = true;
+      }
+      const drivers = (params.get('drivers') || '').split(',').filter(Boolean);
+      document.querySelectorAll('#drivers input').forEach(input => input.checked = drivers.includes(input.value));
+      updateLabels();
+    }
+
+    async function copyShareLink() {
+      syncUrl();
+      try {
+        await navigator.clipboard.writeText(location.href);
+        els.shareStatus.textContent = 'Share link copied. Nice.';
+      } catch {
+        els.shareStatus.textContent = 'Clipboard blocked. Copy the URL manually like it’s 2009.';
+      }
+    }
+
+    function loadDemo() {
+      els.goal.value = 'Design BeamLive permission boundary + ship v1 implementation slice';
+      els.energy.value = 68;
+      els.meetings.value = 120;
+      els.sleep.value = 6.5;
+      els.window.value = 8;
+      document.querySelector('input[name="mode"][value="architect"]').checked = true;
+      const demoDrivers = ['ai', 'context', 'decisions', 'writing'];
+      document.querySelectorAll('#drivers input').forEach(input => input.checked = demoDrivers.includes(input.value));
+      updateLabels();
+      recompute(false);
+    }
+
+    function recompute(push = false) {
+      updateLabels();
+      const plan = computePlan(getState());
+      render(plan);
+      syncUrl(!push);
+    }
+
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+      el.addEventListener('input', () => recompute());
+      el.addEventListener('change', () => recompute());
+    });
+    els.planBtn.addEventListener('click', () => recompute(false));
+    els.demoBtn.addEventListener('click', loadDemo);
+    els.shareBtn.addEventListener('click', copyShareLink);
+
+    loadFromUrl();
+    recompute();
+  </script>
+
+  <script>
+  (function() {
+    const site = 'cadence';
+    const page = location.pathname || '/';
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        metrics: [{
+          name: 'web_page_visits',
+          type: 'counter',
+          value: 1,
+          labels: { site, page }
+        }]
+      })
+    }).catch(() => {});
+  })();
+  </script>
+</body>
+</html>
